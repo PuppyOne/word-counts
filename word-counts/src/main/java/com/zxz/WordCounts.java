@@ -34,8 +34,8 @@ public class WordCounts {
             String[] words = cleanedLine.split("\\s+");
             for (String w : words) {
                 // 清洗标点符号和数字
-                String cleanedWord = w.replaceAll("^'+|'+$", "")
-                        .replaceAll("[^a-zA-Z']", "")
+                String cleanedWord = w.replaceAll("[^a-zA-Z']", "")
+                        .replaceAll("^'+|'+$", "")
                         .toLowerCase();
                 if (!cleanedWord.isEmpty()) {
                     context.write(new Text(cleanedWord), one);
