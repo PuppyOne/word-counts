@@ -14,32 +14,44 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class WordCounts {
 
     // Mapper类
-    public static class TokenizerMapper 
-        extends Mapper<Object, Text, Text, IntWritable> {
-        
+    public static class TokenizerMapper
+            extends Mapper<Object, Text, Text, IntWritable> {
+
         private final static IntWritable one = new IntWritable(1);
-        private Text word = new Text();
 
         public void map(Object key, Text value, Context context) 
             throws IOException, InterruptedException {
-            String[] words = value.toString().split("\\s+"); // 按空格分割单词
+            String line = value.toString();
+            
+            // 跳过序号行和时间戳行
+            if (line.matches("^\\d+$") || line.contains("-->")) 
+                return;
+            
+            // 清洗HTML标签
+            String cleanedLine = line.replaceAll("<.*?>", "");
+            
+            // 分词并过滤空值
+            String[] words = cleanedLine.split("\\s+");
             for (String w : words) {
-                word.set(w.toLowerCase().replaceAll("[^a-zA-Z]", "")); // 过滤非字母字符
-                if (!word.toString().isEmpty()) {
-                    context.write(word, one);
+                // 清洗标点符号和数字
+                String cleanedWord = w.replaceAll("^'+|'+$", "")
+                        .replaceAll("[^a-zA-Z']", "")
+                        .toLowerCase();
+                if (!cleanedWord.isEmpty()) {
+                    context.write(new Text(cleanedWord), one);
                 }
             }
         }
     }
 
     // Reducer类
-    public static class IntSumReducer 
-        extends Reducer<Text, IntWritable, Text, IntWritable> {
-        
+    public static class IntSumReducer
+            extends Reducer<Text, IntWritable, Text, IntWritable> {
+
         private IntWritable result = new IntWritable();
 
-        public void reduce(Text key, Iterable<IntWritable> values, Context context) 
-            throws IOException, InterruptedException {
+        public void reduce(Text key, Iterable<IntWritable> values, Context context)
+                throws IOException, InterruptedException {
             int sum = 0;
             for (IntWritable val : values) {
                 sum += val.get();
